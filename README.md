@@ -13,7 +13,10 @@ Solace Bank Trust is a secure, production-ready fullstack banking platform built
 ## Prerequisites
 - Node.js (v16 or higher)
 - Docker and Docker Compose
-- Azure account
+- Azure account with access to:
+  - Static Web Apps
+  - Function Apps
+  - Azure Database for PostgreSQL
 
 ## Local Development
 
@@ -37,34 +40,66 @@ docker-compose up --build
 ```
 Access the application:
 - Frontend: [http://localhost:3000](http://localhost:3000)
-- Backend: [http://localhost:7071](http://localhost:7071)
-- Database: `localhost:5432`
+- Backend (Azure Functions runtime): [http://localhost:7071](http://localhost:7071)
+- PostgreSQL Database: `localhost:5432`
 
 ## Deployment to Azure
 
 ### 1. Set Up Azure Resources
-- Create an Azure Static Web App for the frontend.
-- Create an Azure Function App for the backend.
-- Set up a PostgreSQL database in Azure.
 
-### 2. Configure GitHub Actions
-Ensure the `.github/workflows/azure-static-web-apps.yml` file is configured with your Azure credentials and resource details.
+You need to provision the following services:
 
-### 3. Deploy
-Push your changes to the `main` branch. GitHub Actions will automatically deploy the application to Azure.
+- **Azure Static Web App**
+  - Hosts the frontend (React app).
+  - Connect your GitHub repository.
+
+- **Azure Function App**
+  - Deploy the `api/` folder with your backend logic.
+  - Use Node.js 18 and link to your PostgreSQL database.
+
+- **Azure Database for PostgreSQL**
+  - Create a flexible server instance.
+  - Configure firewall rules to allow access from Azure services and your IP.
+  - Create database `solacebank`.
+
+### 2. Set Secrets in GitHub Repository
+
+Go to your GitHub repository → Settings → Secrets → Actions, and add:
+
+- `AZURE_STATIC_WEB_APPS_API_TOKEN`
+- `PG_CONN` (your full PostgreSQL connection string)
+
+### 3. Configure GitHub Actions
+Ensure the `.github/workflows/azure-static-web-apps.yml` includes:
+```yaml
+with:
+  app_location: "/"
+  api_location: "/api"
+  output_location: "dist"
+```
+Modify the `build` and `deploy` steps if your directory structure differs.
+
+### 4. Deploy
+Push changes to the `main` branch:
+```bash
+git add .
+git commit -m "Deploying to Azure"
+git push origin main
+```
+GitHub Actions will automatically trigger deployment to Azure Static Web App and Azure Functions.
 
 ## Database Management
 
 ### Initialize Database
 Run the following command to initialize the database schema and seed data:
 ```bash
-docker exec -i <db-container-name> psql -U user -d solacebank < init-db/init.sql
+docker exec -i <db-container-name> psql -U admin -d solacebank < init-db/init.sql
 ```
 
 ### Teardown Database
 To drop all tables, run:
 ```bash
-docker exec -i <db-container-name> psql -U user -d solacebank < teardown.sql
+docker exec -i <db-container-name> psql -U admin -d solacebank < teardown.sql
 ```
 
 ## License
