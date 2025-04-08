@@ -1,0 +1,21 @@
+version: '3.8'
+services:
+  frontend:
+    build: .
+    ports:
+      - "3000:80"
+  backend:
+    build:
+      context: ./api
+    environment:
+      - DATABASE_URL=postgres://user:password@db:5432/solacebank
+    ports:
+      - "7071:7071"
+  db:
+    image: postgres:13
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: solacebank
+    ports:
+      - "5432:5432"
